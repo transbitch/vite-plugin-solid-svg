@@ -82,21 +82,21 @@ export default function (options: SolidSVGPluginOptions = {}): Plugin {
 
       if (shouldProcess(qs)) {
         let code = await readFile(path, { encoding: 'utf8' })
+        return { code }
+      }
+    },
+
+    async transform(code, id, transformOptions) {
+      const [path, qs] = id.split('?')
+      if (path.endsWith('.svg') && shouldProcess(qs)) {
         if (svgo.enabled) {
           let optimized = await optimizeSvg(code, path, svgo.svgoConfig)
           code = optimized || code
         }
-        const result = await compileSvg(code, compilerOptions)
+        code = await compileSvg(code, compilerOptions)
 
-        return result
-      }
-    },
-
-    transform(source, id, transformOptions) {
-      const [path, qs] = id.split('?')
-      if (path.endsWith('.svg') && shouldProcess(qs)) {
         const transformFn = typeof solidPlugin.transform === 'function' ? solidPlugin.transform : solidPlugin.transform.handler;
-        return transformFn.bind(this)(source, `${path}.tsx`, transformOptions)
+        return transformFn.bind(this)(code, `${path}.tsx`, transformOptions)
       }
     },
   }
